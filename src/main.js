@@ -16,13 +16,23 @@ new THREE.OrthographicCamera(
     10
 );
 
+camera.position.set(
+    0,
+    0,
+    5
+);
 
+camera.lookAt(
+    0,
+    0,
+    0
+);
 
 const renderer =
 new THREE.WebGLRenderer({
     antialias:true
 });
-
+//renderer.setClearColor(0x87ceeb,1);
 
 renderer.setSize(
     window.innerWidth,
@@ -33,6 +43,32 @@ renderer.setSize(
 document.body.appendChild(
     renderer.domElement
 );
+
+const cubeLoader = new THREE.CubeTextureLoader();
+
+const skyTexture = cubeLoader.load([
+    "/textures/skybox/posx.jpg",
+    "/textures/skybox/negx.jpg",
+    "/textures/skybox/posy.jpg",
+    "/textures/skybox/negy.jpg",
+    "/textures/skybox/posz.jpg",
+    "/textures/skybox/negz.jpg"
+]);
+
+scene.background = skyTexture;
+
+const sandTexture =
+new THREE.TextureLoader().load(
+    "/textures/sand.jpg"
+);
+
+
+sandTexture.wrapS = THREE.RepeatWrapping;
+sandTexture.wrapT = THREE.RepeatWrapping;
+
+sandTexture.repeat.set(4,4);
+
+
 
 
 
@@ -91,12 +127,11 @@ window.addEventListener(
 
 
 
-
 // WATER MATERIAL
 
 const waterMaterial =
 new THREE.ShaderMaterial({
-
+    transparent: true,
     uniforms:{
 
         heightMap:{
@@ -105,6 +140,13 @@ new THREE.ShaderMaterial({
 
         normalMap:{
             value:null
+        },
+        sandMap:{
+            value:sandTexture
+        },
+
+        skyMap:{
+            value:skyTexture
         }
 
     },
@@ -134,8 +176,8 @@ new THREE.ShaderMaterial({
 
         uniform sampler2D heightMap;
         uniform sampler2D normalMap;
-
-
+        uniform samplerCube skyMap;
+        uniform sampler2D sandMap;
         varying vec2 vUv;
 
 
@@ -183,32 +225,76 @@ new THREE.ShaderMaterial({
 
 
 
-            vec3 waterColor =
+            vec3 shallow =
+            vec3(
+                0.1,
+                0.7,
+                0.9
+            );
+
+            vec3 deep =
             vec3(
                 0.0,
+                0.05,
+                0.2
+            );
+
+            float h =
+            texture2D(
+                heightMap,
+                vUv
+            ).r;
+
+            vec3 waterColor =
+            mix(
+                deep,
+                shallow,
+                h*0.5+0.5
+            );
+
+            float foam =
+            smoothstep(
                 0.25,
-                0.55
+                0.5,
+                length(normal.xz)
             );
-
-
-
-            // fake sky reflection
-
-            float fresnel =
-            pow(
-                1.0-normal.y,
-                3.0
-            );
-
 
             waterColor =
             mix(
                 waterColor,
-                vec3(
-                    0.7,
-                    0.9,
-                    1.0
-                ),
+                vec3(1.0),
+                foam*0.3
+            );
+            // fake sky reflection
+
+            float fresnel =
+            pow(
+                1.0-abs(normal.z),
+                3.0
+            );
+
+
+            vec3 viewDir =
+            normalize(
+                cameraPosition
+            );
+
+            vec3 reflectDir =
+            reflect(
+                -viewDir,
+                normalize(normal)
+            );
+
+            vec3 sky =
+            textureCube(
+                skyMap,
+                reflectDir
+            ).rgb;
+
+            waterColor =
+            mix(
+                waterColor,
+                sky,
                 fresnel
             );
 
@@ -222,7 +308,7 @@ new THREE.ShaderMaterial({
             gl_FragColor =
             vec4(
                 waterColor,
-                1.0
+                0.65
             );
 
 
@@ -235,6 +321,20 @@ new THREE.ShaderMaterial({
 
 
 
+const floor = new THREE.Mesh(
+    new THREE.PlaneGeometry(2,2),
+    new THREE.MeshBasicMaterial({
+        map:sandTexture
+    })
+);
+
+
+// keep it facing camera
+floor.position.z = -0.1;
+
+
+scene.add(floor);
+
 // water plane
 
 const water =
@@ -246,7 +346,7 @@ new THREE.Mesh(
     waterMaterial
 );
 
-
+water.position.z = 0;
 scene.add(water);
 
 
