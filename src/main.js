@@ -71,20 +71,22 @@ document.body.appendChild(
 
 const cubeLoader = new THREE.CubeTextureLoader();
 
+const base = import.meta.env.BASE_URL;
+
 const skyTexture = cubeLoader.load([
-    "/textures/skybox/Daylight Box_Right.bmp",   // posx
-    "/textures/skybox/Daylight Box_Left.bmp",    // negx
-    "/textures/skybox/Daylight Box_Top.bmp",     // posy
-    "/textures/skybox/Daylight Box_Bottom.bmp",  // negy
-    "/textures/skybox/Daylight Box_Front.bmp",   // posz
-    "/textures/skybox/Daylight Box_Back.bmp"     // negz
+    base + "textures/skybox/Daylight Box_Right.bmp",
+    base + "textures/skybox/Daylight Box_Left.bmp",
+    base + "textures/skybox/Daylight Box_Top.bmp",
+    base + "textures/skybox/Daylight Box_Bottom.bmp",
+    base + "textures/skybox/Daylight Box_Front.bmp",
+    base + "textures/skybox/Daylight Box_Back.bmp"
 ]);
 
 scene.background = skyTexture;
 
 const sandTexture =
 new THREE.TextureLoader().load(
-    "/textures/sand.jpg"
+    import.meta.env.BASE_URL + "textures/sand.jpg"
 );
 
 
@@ -443,7 +445,7 @@ const links = [];
 const fontLoader = new FontLoader();
 
 fontLoader.load(
-    "/fonts/helvetiker_regular.typeface.json",
+    import.meta.env.BASE_URL + "fonts/helvetiker_regular.typeface.json",
     (font)=>{
         createLink(
             "PROJECTS",
