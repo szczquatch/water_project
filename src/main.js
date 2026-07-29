@@ -1,10 +1,35 @@
 import * as THREE from "three";
 import {WaterSimulation} from "./water/WaterSimulation.js";
 import {NormalPass} from "./water/NormalPass.js";
+import { FontLoader } from "three/examples/jsm/loaders/FontLoader.js";
+import { TextGeometry } from "three/examples/jsm/geometries/TextGeometry.js";
 
 
 const scene = new THREE.Scene();
 
+
+const ambientLight =
+new THREE.AmbientLight(
+    0xffffff,
+    1
+);
+
+scene.add(ambientLight);
+
+
+const sun =
+new THREE.DirectionalLight(
+    0xffffff,
+    2
+);
+
+sun.position.set(
+    0,
+    1,
+    3
+);
+
+scene.add(sun);
 
 const camera =
 new THREE.OrthographicCamera(
@@ -12,7 +37,7 @@ new THREE.OrthographicCamera(
     1,
     1,
     -1,
-    0,
+    0.1,
     10
 );
 
@@ -47,12 +72,12 @@ document.body.appendChild(
 const cubeLoader = new THREE.CubeTextureLoader();
 
 const skyTexture = cubeLoader.load([
-    "/textures/skybox/posx.jpg",
-    "/textures/skybox/negx.jpg",
-    "/textures/skybox/posy.jpg",
-    "/textures/skybox/negy.jpg",
-    "/textures/skybox/posz.jpg",
-    "/textures/skybox/negz.jpg"
+    "/textures/skybox/Daylight Box_Right.bmp",   // posx
+    "/textures/skybox/Daylight Box_Left.bmp",    // negx
+    "/textures/skybox/Daylight Box_Top.bmp",     // posy
+    "/textures/skybox/Daylight Box_Bottom.bmp",  // negy
+    "/textures/skybox/Daylight Box_Front.bmp",   // posz
+    "/textures/skybox/Daylight Box_Back.bmp"     // negz
 ]);
 
 scene.background = skyTexture;
@@ -68,7 +93,9 @@ sandTexture.wrapT = THREE.RepeatWrapping;
 
 sandTexture.repeat.set(4,4);
 
-
+//floating stuff//
+const floatingObjects = [];
+const clock = new THREE.Clock();
 
 
 
@@ -104,12 +131,47 @@ simulation.addDrop(
 
 // click creates waves
 
+const raycaster = new THREE.Raycaster();
+const mouse = new THREE.Vector2();
+
+
 window.addEventListener(
 "click",
 (e)=>{
 
+
+    mouse.x =
+    (e.clientX / window.innerWidth)*2-1;
+
+
+    mouse.y =
+    -(e.clientY / window.innerHeight)*2+1;
+
+
+    raycaster.setFromCamera(
+        mouse,
+        camera
+    );
+
+
+    const hits =
+    raycaster.intersectObjects(
+        links
+    );
+
+
+    if(hits.length>0){
+
+        window.location.href =
+        hits[0].object.userData.url;
+
+        return;
+    }
+
+
     const x =
     e.clientX / window.innerWidth;
+
 
     const y =
     1 -
@@ -132,6 +194,7 @@ window.addEventListener(
 const waterMaterial =
 new THREE.ShaderMaterial({
     transparent: true,
+    depthWrite:false,
     uniforms:{
 
         heightMap:{
@@ -228,16 +291,19 @@ new THREE.ShaderMaterial({
             vec3 shallow =
             vec3(
                 0.1,
-                0.7,
-                0.9
+                0.65,
+                0.85
             );
 
             vec3 deep =
             vec3(
                 0.0,
-                0.05,
+                0.08,
                 0.2
             );
+
+
+            // get wave height
 
             float h =
             texture2D(
@@ -245,12 +311,30 @@ new THREE.ShaderMaterial({
                 vUv
             ).r;
 
+
+            // distort sand underneath
+
+            vec2 distortedUV =
+            vUv + normal.xz * 0.08;
+
+
+            vec3 sand =
+            texture2D(
+                sandMap,
+                distortedUV
+            ).rgb;
+
+
+            // mix sand and water
+
             vec3 waterColor =
             mix(
-                deep,
+                sand,
                 shallow,
-                h*0.5+0.5
+                0.25
             );
+
+
 
             float foam =
             smoothstep(
@@ -301,14 +385,14 @@ new THREE.ShaderMaterial({
 
 
             waterColor *=
-            lighting + 0.25;
+            0.8 + lighting * 0.4;
 
 
 
             gl_FragColor =
             vec4(
                 waterColor,
-                0.65
+                0.45
             );
 
 
@@ -350,7 +434,170 @@ water.position.z = 0;
 scene.add(water);
 
 
+// -----------------------------
+// Floating water links
+// -----------------------------
 
+const links = [];
+
+const fontLoader = new FontLoader();
+
+fontLoader.load(
+    "/fonts/helvetiker_regular.typeface.json",
+    (font)=>{
+        createLink(
+            "PROJECTS",
+            0,
+            0,
+            "/projects.html",
+            font
+        );
+
+        // createLink(
+        //     "PROJECTS",
+        //     -0.5,
+        //     0.2,
+        //     "/projects.html",
+        //     font
+        // );
+
+
+        // createLink(
+        //     "ABOUT",
+        //     0.5,
+        //     -0.2,
+        //     "/about.html",
+        //     font
+        // );
+
+
+    }
+);
+
+
+function createLink(text,x,y,url,font){
+
+    const group = new THREE.Group();
+
+
+    const spacing = 0.09;
+
+
+    [...text].forEach((char,index)=>{
+
+
+        // wooden block
+
+        const wood =
+        new THREE.Mesh(
+            new THREE.BoxGeometry(
+                0.08,
+                0.08,
+                0.025
+            ),
+            new THREE.MeshStandardMaterial({
+                color:0x8b4513
+            })
+        );
+
+
+        wood.position.x =
+        (index - text.length/2)
+        * spacing;
+
+
+
+        // letter
+
+        const geometry =
+        new TextGeometry(
+            char,
+            {
+                font:font,
+                size:0.055,
+                depth:0.005
+            }
+        );
+
+
+        geometry.center();
+
+
+        const letter =
+        new THREE.Mesh(
+            geometry,
+            new THREE.MeshBasicMaterial({
+                color:0xffffff
+            })
+        );
+
+
+        letter.position.z = 0.02;
+
+
+        wood.add(letter);
+
+
+        group.add(wood);
+        floatingObjects.push({
+
+            object:wood,
+
+            // water coordinates
+            waterX:
+                0.5 + (x + wood.position.x) * 0.25,
+
+            waterY:
+                0.5 + y * 0.25,
+
+            offset:
+                Math.random()*10,
+
+            baseZ:
+                0.15,
+
+            speed:
+                1 + Math.random(),
+
+        });
+
+    });
+
+
+
+    group.position.set(
+        x,
+        y,
+        0
+    );
+
+
+    group.userData.url=url;
+
+
+    scene.add(group);
+
+
+    links.push(group);
+
+
+    // floatingObjects.push({
+    //     object:group,
+    //     offset:Math.random()*10
+    // });
+
+}
+// const testCube =
+// new THREE.Mesh(
+//     new THREE.BoxGeometry(0.1,0.1,0.1),
+//     new THREE.MeshBasicMaterial({
+//         color:0xff0000
+//     })
+// );
+
+// testCube.position.set(0,0,1);
+
+// scene.add(testCube);
 
 
 function animate(){
@@ -380,6 +627,34 @@ function animate(){
 
     waterMaterial.uniforms.normalMap.value =
         normalTexture;
+
+    const time =
+    clock.getElapsedTime();
+
+
+    floatingObjects.forEach(
+    (item)=>{
+
+
+        const wave =
+        Math.sin(
+            time*2 + item.offset
+        );
+
+
+        item.object.position.z =
+        item.baseZ +
+        wave * 0.02;
+
+
+        item.object.rotation.z =
+        wave * 0.15;
+
+
+    });
+
+
+
 
 
 

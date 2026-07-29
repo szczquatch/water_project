@@ -156,5 +156,28 @@ export class NormalPass {
         return this.target.texture;
 
     }
+    // getNormal(x,y){
 
+    //     const pixel =
+    //     new Float32Array(4);
+
+
+    //     this.renderer.readRenderTargetPixels(
+    //         this.target,
+    //         Math.floor(x * this.target.width),
+    //         Math.floor(y * this.target.height),
+    //         1,
+    //         1,
+    //         pixel
+    //     );
+
+
+    //     // convert 0-1 back to -1 to +1
+    //     return {
+    //         x: pixel[0] * 2 - 1,
+    //         y: pixel[1] * 2 - 1,
+    //         z: pixel[2] * 2 - 1
+    //     };
+
+    // }
 }
