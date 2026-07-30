@@ -156,21 +156,28 @@ window.addEventListener(
     );
 
 
-    const hits =
-    raycaster.intersectObjects(
+    const hits = raycaster.intersectObjects(
         links,
         true
     );
 
+    if(hits.length > 0){
 
-    if(hits.length>0){
+        let obj = hits[0].object;
 
-        window.location.href =
-        hits[0].object.userData.url;
+        while(obj.parent && !obj.userData.url){
+            obj = obj.parent;
+        }
+
+        console.log("Clicked:", obj);
+        console.log("URL:", obj.userData.url);
+
+        if(obj.userData.url){
+            window.open(obj.userData.url, "_blank");
+        }
 
         return;
     }
-
 
     const x =
     e.clientX / window.innerWidth;

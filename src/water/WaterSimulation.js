@@ -7,7 +7,7 @@ export class WaterSimulation {
 
         this.renderer = renderer;
         this.size = size;
-
+        this.pixel = new Float32Array(4);
 
         const options = {
             minFilter: THREE.LinearFilter,
@@ -356,5 +356,23 @@ export class WaterSimulation {
         this.write = temp;
 
     }
+    // getHeight(x,y){
 
+    //     const pixel =
+    //     new Float32Array(4);
+
+
+    //     this.renderer.readRenderTargetPixels(
+    //         this.read,
+    //         Math.floor(x*this.size),
+    //         Math.floor(y*this.size),
+    //         1,
+    //         1,
+    //         pixel
+    //     );
+
+
+    //     return pixel[0];
+
+    // }
 }
