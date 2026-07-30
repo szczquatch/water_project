@@ -158,7 +158,8 @@ window.addEventListener(
 
     const hits =
     raycaster.intersectObjects(
-        links
+        links,
+        true
     );
 
 
@@ -451,7 +452,7 @@ fontLoader.load(
             "PROJECTS",
             0,
             0,
-            "/projects.html",
+            "https://www.linkedin.com/in/szczepanek/",
             font
         );
 
